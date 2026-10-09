@@ -1,0 +1,40 @@
+package com.sora25.app2.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
+
+@Composable
+fun VideoPlayer(url: String, play: Boolean, modifier: Modifier = Modifier, fill: Boolean = true) {
+    val ctx = LocalContext.current
+    val player = remember(url) {
+        ExoPlayer.Builder(ctx).build().apply {
+            setMediaItem(MediaItem.fromUri(url))
+            repeatMode = Player.REPEAT_MODE_ONE
+            prepare()
+        }
+    }
+    LaunchedEffect(play, player) { player.playWhenReady = play }
+    DisposableEffect(player) { onDispose { player.release() } }
+    AndroidView(
+        modifier = modifier,
+        factory = {
+            PlayerView(it).apply {
+                useController = false
+                resizeMode = if (fill) AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                else AspectRatioFrameLayout.RESIZE_MODE_FIT
+                this.player = player
+            }
+        },
+        update = { it.player = player },
+    )
+}
